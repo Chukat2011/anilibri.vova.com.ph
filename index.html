@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>TempleOS Видеоархив</title>
+    <style>
+        body {
+            background: #0000AA;
+            color: #FFFF00;
+            font-family: 'Courier New', monospace;
+            margin: 0;
+            padding: 20px;
+        }
+        
+        h1 {
+            border: 3px solid #FFFF00;
+            padding: 10px;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .video-container {
+            background: #000055;
+            border: 2px dashed #FFFF00;
+            margin: 15px auto;
+            padding: 10px;
+            width: 80%;
+        }
+
+        video {
+            width: 100%;
+            height: 480px;
+            border: 1px solid #FFFF00;
+        }
+
+        footer {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: #000055;
+            padding: 5px;
+            text-align: center;
+            border-top: 2px solid #FFFF00;
+        }
+    </style>
+</head>
+<body>
+    <h1>✦ ВИДЕОАРХИВ TEMPLEOS ✦</h1>
+    <div id="videoGallery"></div>
+
+    <footer>
+        <marquee behavior="scroll" direction="left">
+            Создатель системы: Вадим Карпов || HolyC v1.1 || 640x480 16-цветный режим
+        </marquee>
+    </footer>
+
+    <script>
+        async function loadVideos() {
+            try {
+                const response = await fetch('videoAnddesc/');
+                const text = await response.text();
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(text, 'text/html');
+                
+                const links = [...doc.querySelectorAll('a')]
+                    .map(a => a.href.split('/').pop())
+                    .filter(f => f.endsWith('.mp4'));
+
+                for (const file of links) {
+                    const name = file.split('.')[0];
+                    const container = document.createElement('div');
+                    container.className = 'video-container';
+                    container.innerHTML = `
+                        <h3>${name}</h3>
+                        <video controls>
+                            <source src="videoAnddesc/${file}" type="video/mp4">
+                        </video>
+                        <div id="desc-${name}">Загрузка описания...</div>
+                    `;
+                    document.getElementById('videoGallery').appendChild(container);
+
+                    // Загрузка описания
+                    fetch(`videoAnddesc/${name}.txt`)
+                        .then(r => r.text())
+                        .then(t => {
+                            document.getElementById(`desc-${name}`).innerHTML = t;
+                        })
+                        .catch(() => {
+                            document.getElementById(`desc-${name}`).innerHTML = 
+                                'Описание не найдено';
+                        });
+                }
+            } catch (error) {
+                const container = document.createElement('div');
+                container.innerHTML = '<h3 style="color: #FF0000">ОШИБКА СИСТЕМЫ!</h3>';
+                document.getElementById('videoGallery').appendChild(container);
+                console.error('HolyC Error:', error);
+            }
+        }
+
+        // Явная привязка события с обработчиком ошибок
+        window.addEventListener('load', () => {
+            loadVideos().catch(e => console.error('Boot Failed:', e));
+        });
+    </script>
+</body>
+</html>
